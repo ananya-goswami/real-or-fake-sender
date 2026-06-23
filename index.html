@@ -1,0 +1,224 @@
+<!doctype html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+  <title>Judge These Screens</title>
+  <link rel="icon" type="image/webp" href="./Assets/logo.webp" />
+  <link rel="stylesheet" href="index.css?v=20260623-tej2" />
+  <link rel="stylesheet" href="game.css?v=20260623-tej2" />
+</head>
+
+<body>
+  <div id="loader-overlay" class="loader-overlay">
+    <img src="./gifs/loader.gif" alt="Loading..." />
+  </div>
+
+  <div class="portrait-mode-blocker">
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 384 512" role="img" aria-label="Mobile icon"
+      class="rotate-device-icon">
+      <path fill="currentColor"
+        d="M16 64C16 28.7 44.7 0 80 0L304 0c35.3 0 64 28.7 64 64l0 384c0 35.3-28.7 64-64 64L80 512c-35.3 0-64-28.7-64-64L16 64zm64 0l0 304 224 0 0-304-224 0zM192 472c17.7 0 32-14.3 32-32s-14.3-32-32-32-32 14.3-32 32 14.3 32 32 32z" />
+    </svg>
+    <h2 data-i18n="rotateTitle">Please Rotate Your Device</h2>
+    <p data-i18n="rotateMessage">This activity is best experienced in landscape mode.</p>
+  </div>
+
+  <div class="app-container">
+    <div class="top-bar">
+      <div class="progress-container">
+        <div class="progress-dots" id="progressDots" aria-label="Activity progress"></div>
+      </div>
+
+      <div class="top-icons">
+        <button class="icon-circle" id="muteBtn" title="Toggle sound" aria-label="Toggle sound">
+          <svg class="mute-on-icon" xmlns="http://www.w3.org/2000/svg" width="34" height="34" viewBox="0 0 24 24"
+            fill="none">
+            <path
+              d="M4 9.25C4 8.56 4.56 8 5.25 8H8L12.3 4.58C13.12 3.93 14.33 4.51 14.33 5.56V18.44C14.33 19.49 13.12 20.07 12.3 19.42L8 16H5.25C4.56 16 4 15.44 4 14.75V9.25Z"
+              fill="currentColor" />
+            <path
+              d="M16.9 9.1C17.72 9.88 18.18 10.86 18.18 12C18.18 13.14 17.72 14.12 16.9 14.9"
+              stroke="currentColor" stroke-width="2" stroke-linecap="round" />
+            <path
+              d="M19.22 6.85C20.63 8.2 21.42 9.92 21.42 12C21.42 14.08 20.63 15.8 19.22 17.15"
+              stroke="currentColor" stroke-width="2" stroke-linecap="round" />
+          </svg>
+          <svg class="mute-off-icon" xmlns="http://www.w3.org/2000/svg" width="34" height="34" viewBox="0 0 24 24"
+            fill="none" hidden>
+            <path
+              d="M4 9.25C4 8.56 4.56 8 5.25 8H8L12.3 4.58C13.12 3.93 14.33 4.51 14.33 5.56V18.44C14.33 19.49 13.12 20.07 12.3 19.42L8 16H5.25C4.56 16 4 15.44 4 14.75V9.25Z"
+              fill="currentColor" />
+            <path d="M16.8 8.6L21 15.4" stroke="currentColor" stroke-width="2.1" stroke-linecap="round" />
+            <path d="M21 8.6L16.8 15.4" stroke="currentColor" stroke-width="2.1" stroke-linecap="round" />
+          </svg>
+        </button>
+      </div>
+    </div>
+
+    <div class="content">
+      <div class="left-panel">
+        <div class="sidebar-blue-shell">
+        <div class="question-card">
+          <div class="question-desc" id="questionTextEl">
+            <p class="question-label">Cyber Safety Mission</p>
+            <div class="polynomial-expression safety-heading">
+              <span class="expression" id="activityTitle">Judge These Screens</span>
+            </div>
+            <p class="activity-subtitle" id="activitySubtitle">
+              Read each message and decide whether it is FAKE or REAL.
+            </p>
+            <p class="activity-side-progress" id="activitySideProgress" hidden></p>
+          </div>
+        </div>
+
+        <div class="answer-card">
+          <section class="detective-guide">
+            <img src="./Assets/tej_15.webp" alt="Tej, your safety guide" class="detective-guide-image" />
+            <div class="detective-speech">Some messages try to trick you. <strong>Can you catch the fakes?</strong></div>
+          </section>
+
+          <section class="info-card info-card-highlight" id="coachCard">
+            <div class="section-eyebrow">Detective Tips</div>
+            <ul class="safety-coach-list" id="coachList">
+              <li><span class="coach-emoji" aria-hidden="true">🔗</span> Strange links can trick you</li>
+              <li><span class="coach-emoji" aria-hidden="true">⚠️</span> Scary words rush you</li>
+              <li><span class="coach-emoji" aria-hidden="true">🎁</span> Free prizes can be fake</li>
+            </ul>
+            <p id="activityCoach" class="coach-copy" hidden></p>
+          </section>
+
+          <section class="mission-complete-card" id="missionCompleteCard" hidden>
+            <img class="mission-complete-badge" src="./Assets/badge.webp" alt="Mission Complete badge" />
+            <div class="mission-complete-text">
+              <strong>MISSION COMPLETE!</strong>
+              <span>You spotted the scams and stayed safe.</span>
+            </div>
+            <div class="mission-score-card">
+              <img src="./Assets/target.webp" alt="" aria-hidden="true" />
+              <div>
+                <small>SCREENS CORRECT</small>
+                <b id="missionScoreValue">5/5</b>
+              </div>
+            </div>
+          </section>
+
+          <section class="info-card recap-side-card" id="recapSideCard" hidden></section>
+
+        </div>
+        </div>
+
+        <div class="sidebar-motto">Be <b>Smart.</b> Be <b>Safe.</b> Be <b>Secure.</b></div>
+      </div>
+
+      <div class="right-panel">
+        <div class="canvas-block">
+          <h3 id="activityCanvasTitle">Activity 2: Fake or Real?</h3>
+          <div id="interactionHost" class="interaction-host-area"></div>
+        </div>
+        <div class="footer-buttons check-btn-wrap" id="footerButtons">
+          <div class="footer-actions" id="footerActions">
+            <button class="btn" id="primaryActionBtn" type="button">Start</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div id="tutorialOverlay" class="tutorial-overlay">
+    <div class="tutorial-modal">
+      <button id="closeTutorialBtn" class="tutorial-close-btn" aria-label="Close tutorial">
+        <svg width="31" height="31" viewBox="0 0 31 31" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <circle cx="15.5" cy="15.5" r="13.5" stroke="currentColor" stroke-width="2.2" />
+          <path
+            d="M10.7324 21.3786L9.58252 20.1692L14.1819 15.3314L9.58252 10.4936L10.7324 9.28418L15.3318 14.122L19.9312 9.28418L21.0811 10.4936L16.4817 15.3314L21.0811 20.1692L19.9312 21.3786L15.3318 16.5409L10.7324 21.3786Z"
+            fill="currentColor" />
+        </svg>
+      </button>
+      <div class="tutorial-mascot" aria-hidden="true">&#128373;&#65039;</div>
+      <h2 id="tutorialTitle">How to Play</h2>
+      <p class="tutorial-subtitle">Become a Scam Detective in 4 easy steps!</p>
+
+      <div class="tutorial-step step-1">
+        <div class="tutorial-step-number">1</div>
+        <span class="tutorial-step-emoji" aria-hidden="true">&#128241;</span>
+        <p class="tutorial-step-text" id="tutorialStep1">Read the message shown inside the phone.</p>
+      </div>
+
+      <div class="tutorial-step step-2">
+        <div class="tutorial-step-number">2</div>
+        <span class="tutorial-step-emoji" aria-hidden="true">&#128072;</span>
+        <p class="tutorial-step-text" id="tutorialStep2">Tap FAKE on the left or REAL on the right.</p>
+      </div>
+
+      <div class="tutorial-step step-3">
+        <div class="tutorial-step-number">3</div>
+        <span class="tutorial-step-emoji" aria-hidden="true">&#128269;</span>
+        <p class="tutorial-step-text" id="tutorialStep3">Read the clue card to learn the warning sign.</p>
+      </div>
+
+      <div class="tutorial-step step-4">
+        <div class="tutorial-step-number">4</div>
+        <span class="tutorial-step-emoji" aria-hidden="true">&#127942;</span>
+        <p class="tutorial-step-text" id="tutorialStep4">Judge all 5 messages to finish Activity 2.</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- Language Popup (Integrated from template) -->
+  <div id="languagePopupOverlay" class="language-popup-overlay">
+    <div class="language-popup" id="languagePopup">
+      <button id="langPopupCloseBtn" class="lang-close-btn" aria-label="Close language picker">
+        <svg width="31" height="31" viewBox="0 0 31 31" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <circle cx="15.5" cy="15.5" r="13.5" stroke="currentColor" stroke-width="2.2" />
+          <path
+            d="M10.7324 21.3786L9.58252 20.1692L14.1819 15.3314L9.58252 10.4936L10.7324 9.28418L15.3318 14.122L19.9312 9.28418L21.0811 10.4936L16.4817 15.3314L21.0811 20.1692L19.9312 21.3786L15.3318 16.5409L10.7324 21.3786Z"
+            fill="currentColor" />
+        </svg>
+      </button>
+      <div id="langMainPanel" class="lang-main">
+        <div class="lang-text-block">
+          <h3 id="langPopupTitle" data-i18n="shell.langPopupTitle">Choose Language</h3>
+          <p id="langPopupSubtitle" data-i18n="shell.langPopupSubtitle">Switch the interface language for this activity.</p>
+        </div>
+        <div class="custom-select-wrapper">
+          <div id="customSelectTrigger" class="custom-select-trigger" tabindex="0" role="combobox"
+            aria-haspopup="listbox" aria-expanded="false">
+            <svg class="select-lang-icon" viewBox="0 0 38 30" fill="none" xmlns="http://www.w3.org/2000/svg" role="img"
+              aria-label="Language icon">
+              <path
+                d="M24.7409 22.946C25.1215 23.1027 25.5544 22.9236 25.7185 22.543L26.6215 20.3788H30.5842L31.4872 22.543C31.6066 22.8266 31.8827 22.9982 32.1738 22.9982C32.2708 22.9982 32.3678 22.9759 32.4648 22.9385C32.8454 22.7818 33.0245 22.3415 32.8678 21.9609L31.7708 19.3415C31.7708 19.3415 31.7708 19.3341 31.7633 19.3341L29.2857 13.4162C29.1663 13.14 28.8976 12.9609 28.5991 12.9609C28.3006 12.9609 28.0245 13.14 27.9126 13.4162L25.435 19.3415L24.3379 21.9609C24.1812 22.349 24.3603 22.7893 24.7409 22.946ZM28.5991 15.6475L29.9573 18.8938H27.2409L28.5991 15.6475Z"
+                fill="#386AF6" />
+              <path
+                d="M3.5597 19.2911H4.08209V22.6791C4.08209 22.9776 4.26119 23.2537 4.54477 23.3657C4.63432 23.403 4.73134 23.4254 4.82835 23.4254C5.02238 23.4254 5.21641 23.3508 5.3582 23.209L9.26865 19.2985H16.4179V23.2537C16.4179 25.0075 17.8433 26.4328 19.597 26.4328H29.1642L32.5149 29.7836C32.6567 29.9254 32.8507 30 33.0447 30C33.1418 30 33.2388 29.9851 33.3283 29.9403C33.6045 29.8284 33.791 29.5522 33.791 29.2537V26.4328H34.1343C35.888 26.4328 37.3134 25.0075 37.3134 23.2537V12.7314C37.3134 10.9776 35.888 9.55226 34.1343 9.55226H23.9552V3.55972C23.9552 1.59704 22.3582 2.60482e-05 20.3955 2.60482e-05H3.5597C1.59701 -0.00743663 0 1.58958 0 3.55226V15.7314C0 17.694 1.59701 19.2911 3.5597 19.2911ZM34.1343 11.0373C35.0671 11.0373 35.8209 11.7911 35.8209 12.7239V23.2463C35.8209 24.1791 35.0671 24.9328 34.1343 24.9328H33.0447C32.6343 24.9328 32.2985 25.2687 32.2985 25.6791V27.4478L30 25.1493C29.8582 25.0075 29.6716 24.9328 29.4701 24.9328H19.597C18.6642 24.9328 17.9104 24.1791 17.9104 23.2463V19.2911H20.3955C22.3582 19.2911 23.9552 17.694 23.9552 15.7314V11.0373H34.1343ZM1.49254 3.55226C1.49254 2.41047 2.41791 1.4851 3.5597 1.4851H20.388C21.5298 1.4851 22.4552 2.41047 22.4552 3.55226V15.7314C22.4552 16.8731 21.5298 17.7985 20.388 17.7985H8.95522C8.75372 17.7985 8.56716 17.8806 8.42537 18.0149L5.56716 20.8731V18.5448C5.56716 18.1343 5.23134 17.7985 4.82089 17.7985H3.55224C2.41791 17.7985 1.49254 16.8731 1.49254 15.7314V3.55226Z"
+                fill="#386AF6" />
+            </svg>
+            <span id="selectedLangText" class="selected-lang-text">English</span>
+            <svg class="select-arrow" width="16" height="16" viewBox="0 0 24 24" fill="none"
+              xmlns="http://www.w3.org/2000/svg">
+              <path d="M6 9L12 15L18 9" stroke="#475569" stroke-width="3" stroke-linecap="round"
+                stroke-linejoin="round" />
+            </svg>
+          </div>
+          <div id="customSelectOptions" class="custom-select-options" role="listbox"></div>
+        </div>
+        <div class="lang-actions">
+          <button class="lang-btn cancel" id="langCancelBtn" type="button" data-i18n="shell.cancel">Cancel</button>
+          <button class="lang-btn apply" id="langApplyBtn" type="button" data-i18n="shell.apply">Apply</button>
+        </div>
+      </div>
+      <div class="lang-confirm" id="langConfirmPanel" hidden>
+        <h4 id="langSelectedTitle" data-i18n="shell.langSelectedTitle">Language Selected!</h4>
+        <p>
+          <span id="langSelectedMessageStart" data-i18n="shell.langSelectedMessageStart">Your app is now in English.</span>
+          <span id="langSelectedMessageEnd" data-i18n="shell.langSelectedMessageEnd">Let's get started!</span>
+        </p>
+      </div>
+    </div>
+  </div>
+
+  <script type="module" src="index.js?v=20260623-tej2"></script>
+</body>
+
+</html>

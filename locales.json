@@ -1,0 +1,17 @@
+{
+  "en": {
+    "shell": {
+      "appTitle": "Game Shell",
+      "label": "Reusable Shell",
+      "title": "Ready for a new game",
+      "subtitle": "Drop your game logic into the play area and use this frame for controls, progress, language, and fullscreen.",
+      "coachTitle": "Shell Note",
+      "coach": "This template keeps the layout and shared controls, with the old game-specific activities removed.",
+      "boardTitle": "Play Area",
+      "start": "Start",
+      "next": "Next",
+      "complete": "Complete",
+      "playAgain": "Start Again"
+    }
+  }
+}
