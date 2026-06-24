@@ -244,7 +244,7 @@ function setSidebarMode(complete) {
     mc.hidden = !complete;
     if (complete) {
       const score = document.getElementById('missionScoreValue');
-      if (score) score.textContent = `${GAME_STEPS}/${GAME_STEPS}`;
+      if (score) score.textContent = `${getScore()}/${GAME_STEPS}`;
     }
   }
 }
@@ -486,7 +486,7 @@ function renderComplete() {
           <span class="final-target-icon" aria-hidden="true">&#127919;</span>
           <div>
             <strong>Screens Correct</strong>
-            <b>${GAME_STEPS} / ${GAME_STEPS}</b>
+            <b>${getScore()} / ${GAME_STEPS}</b>
             <span>Great Work!</span>
           </div>
         </section>
