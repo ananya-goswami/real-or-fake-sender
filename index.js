@@ -134,12 +134,7 @@ const gameCopy = {
     muted: 'Turn sound on',
     unmuted: 'Turn sound off',
     enterFullscreen: 'Enter fullscreen',
-    exitFullscreen: 'Exit fullscreen',
-    tutorialTitle: 'How to Play',
-    tutorialStep1: 'Read the message shown inside the phone.',
-    tutorialStep2: 'Tap FAKE on the left or REAL on the right.',
-    tutorialStep3: 'Read the clue card to learn the warning sign.',
-    tutorialStep4: 'Judge all 5 messages to finish Activity 2.'
+    exitFullscreen: 'Exit fullscreen'
   }
 };
 
@@ -152,7 +147,8 @@ const state = {
   answers: Array(GAME_STEPS).fill(null),
   answerEffectKey: '',
   feedback: null,
-  muted: false
+  muted: false,
+  voiceActivated: false
 };
 
 const ui = {
@@ -167,7 +163,6 @@ const ui = {
   canvasTitle: document.getElementById('activityCanvasTitle'),
   host: document.getElementById('interactionHost'),
   footerActions: document.getElementById('footerActions'),
-  tutorialOverlay: document.getElementById('tutorialOverlay'),
   muteBtn: document.getElementById('muteBtn'),
   langBtn: document.getElementById('langBtn'),
   tejImage: document.querySelector('.detective-guide-image'),
@@ -186,6 +181,32 @@ const TEJ = {
 function setGuide(pose) {
   if (ui.tejImage) ui.tejImage.src = `./Assets/${pose.img}`;
   if (ui.tejSpeech) ui.tejSpeech.innerHTML = pose.speech;
+}
+
+// First-screen voice prompt (behavior ported from the bubble-burst game): the
+// mascot's first bubble invites a click to start the voiceover, since browsers
+// block autoplay until the first user gesture.
+const VOICE_PROMPT_HTML = 'Click anywhere on the page <em>except the bubbles</em> to activate voice.';
+let voiceActivationHandler = null;
+
+function clearVoiceActivation() {
+  if (!voiceActivationHandler) return;
+  document.removeEventListener('pointerdown', voiceActivationHandler);
+  document.removeEventListener('touchstart', voiceActivationHandler);
+  voiceActivationHandler = null;
+}
+
+// Arm a one-time "click anywhere (except the mute button) to start the voiceover".
+function armVoiceActivation(onActivate) {
+  if (voiceActivationHandler) return;
+  voiceActivationHandler = (event) => {
+    if (event?.target?.closest?.('#muteBtn')) return; // ignore the sound toggle
+    clearVoiceActivation();
+    state.voiceActivated = true;
+    onActivate();
+  };
+  document.addEventListener('pointerdown', voiceActivationHandler);
+  document.addEventListener('touchstart', voiceActivationHandler);
 }
 
 function renderCoachTips(tips) {
@@ -277,23 +298,42 @@ function playAudio(file) {
 // ===== Voiceover narration =====
 const VO_PATH = './audio/voiceover/english/';
 let currentVoice = null;
-let currentVoiceKey = '';
+let currentVoiceKey = '';    // joined id of the current narration (avoids replays on re-render)
+let currentVoiceList = [];   // full narration, kept so unmute can resume it
+let voiceQueue = [];         // clips still waiting to play in the current narration
 
-function playVoice(key) {
-  if (key === currentVoiceKey) return; // don't replay the same screen's narration
-  currentVoiceKey = key;
-  if (currentVoice) {
-    currentVoice.pause();
-    currentVoice = null;
-  }
+// Play one screen's narration. Pass a single key (e.g. 'complete') or an ordered
+// list of keys to play back-to-back (e.g. ['intro', 'q_sbi']).
+function playVoice(keys) {
+  const list = Array.isArray(keys) ? keys : [keys];
+  const id = list.join('>');
+  if (id === currentVoiceKey) return; // don't replay the same screen's narration
+  currentVoiceKey = id;
+  currentVoiceList = list.slice();
+  stopVoice();
   if (state.muted) return;
+  voiceQueue = list.slice();
+  playNextVoice();
+}
+
+// Play the next queued clip; when it ends, the following clip starts automatically.
+function playNextVoice() {
+  const key = voiceQueue.shift();
+  if (!key) {
+    currentVoice = null;
+    return;
+  }
   const audio = new Audio(`${VO_PATH}${key}.ogg`);
   audio.volume = 0.95;
   currentVoice = audio;
+  audio.addEventListener('ended', () => {
+    if (currentVoice === audio) playNextVoice();
+  });
   audio.play().catch(() => {});
 }
 
 function stopVoice() {
+  voiceQueue = [];
   if (currentVoice) {
     currentVoice.pause();
     currentVoice = null;
@@ -345,34 +385,6 @@ function renderPhoneScreen(screen) {
   `;
 }
 
-function renderStartScreen() {
-  ui.host.innerHTML = `
-    <section class="scam-game activity-stage">
-      <div class="activity-panel start-panel">
-        <header class="mobile-mission-banner">
-          <span class="mission-bubble" aria-hidden="true">&#128373;&#65039;</span>
-          <div>
-            <strong><span class="real-word">Real</span> or <span class="fake-word">Fake</span> Sender?</strong>
-            <small>Spot the scam messages and stay safe!</small>
-          </div>
-        </header>
-        <div class="start-hero">
-          <div class="intro-copy">
-            <h4>Ready to catch some scams, Detective?</h4>
-            <p>Read each message, then tap <b class="fake-word">FAKE</b> or <b class="real-word">REAL</b>. Watch out for these four clues:</p>
-          </div>
-          <div class="detective-board">
-            <div class="case-file case-file-red"><span class="case-emoji">&#128279;</span> Strange Link</div>
-            <div class="case-file case-file-yellow"><span class="case-emoji">&#128561;</span> Scary Words</div>
-            <div class="case-file case-file-blue"><span class="case-emoji">&#127873;</span> Huge Offer</div>
-            <div class="case-file case-file-green"><span class="case-emoji">&#9989;</span> Simple Update</div>
-          </div>
-        </div>
-      </div>
-    </section>
-  `;
-}
-
 function renderMissionBanner(title, subtitle) {
   return `
     <header class="mobile-mission-banner${subtitle ? '' : ' mobile-mission-banner--compact'}">
@@ -414,7 +426,7 @@ function renderJudgeScreen() {
       <div class="activity-panel judge-panel">
         ${renderMissionBanner(
           '<span class="real-word">Real</span> or <span class="fake-word">Fake</span>?',
-          state.currentIndex === 0 ? 'Spot the scam messages and stay safe!' : ''
+          'Spot the scam messages and stay safe!'
         )}
         ${renderScreenProgress(`Screen ${state.currentIndex + 1}/${GAME_STEPS}`)}
         <div class="judge-hero">
@@ -453,41 +465,60 @@ function renderJudgeScreen() {
 }
 
 function renderComplete() {
+  // Content is unchanged from Activity 2; only the layout/positioning follows
+  // Activity 4's "final-mission-stage" finale (side panel + board with absolutely
+  // positioned heading, hero row, learned panel and play-again button).
+  const learned = [
+    { emoji: '🔗', title: 'Fake Links', detail: 'Check links before you trust them' },
+    { emoji: '🚨', title: 'Scary Words', detail: 'Urgent words try to rush you' },
+    { emoji: '🎁', title: 'Too-Good Offers', detail: 'Free prizes can be fake' }
+  ];
   ui.host.innerHTML = `
-    <section class="scam-game activity-stage finale">
+    <section class="scam-game final-mission-stage">
       <div class="finale-confetti-layer" aria-hidden="true">${buildConfetti(64)}</div>
-      <div class="activity-panel complete-panel">
-        <h2 class="finale-title">Great job, you saved Tej!</h2>
-        <div class="finale-stage">
-          <div class="finale-tej-wrap">
-            <img class="finale-tej" src="./Assets/tej_21.webp" alt="Tej celebrating" />
+      <aside class="final-side-panel">
+        <section class="final-side-mission-card">
+          <img src="./Assets/final_shield_icon.webp" alt="" aria-hidden="true" />
+          <strong>Mission <em>Complete!</em></strong>
+          <span>You spotted the scams and stayed safe.</span>
+        </section>
+        <section class="final-found-card">
+          <span class="final-target-icon" aria-hidden="true">&#127919;</span>
+          <div>
+            <strong>Screens Correct</strong>
+            <b>${GAME_STEPS} / ${GAME_STEPS}</b>
+            <span>Great Work!</span>
           </div>
-          <div class="finale-learned">
-            <img class="finale-shield" src="./Assets/mission-shield.webp" alt="" aria-hidden="true" />
-            <div class="finale-learned-head">HERE'S WHAT YOU LEARNED:</div>
-            <div class="finale-learned-grid">
-              <div class="finale-learned-card">
-                <span class="finale-learned-emoji">🔗</span>
-                <b>Fake Links</b>
-                <small>Check links before you trust them</small>
-              </div>
-              <div class="finale-learned-card">
-                <span class="finale-learned-emoji">🚨</span>
-                <b>Scary Words</b>
-                <small>Urgent words try to rush you</small>
-              </div>
-              <div class="finale-learned-card">
-                <span class="finale-learned-emoji">🎁</span>
-                <b>Too-Good Offers</b>
-                <small>Free prizes can be fake</small>
-              </div>
-            </div>
-            <p class="finale-note">Report cyber fraud in India at <b>cybercrime.gov.in</b> or call <b>1930</b>.</p>
-          </div>
+        </section>
+        <div class="sidebar-motto">Be <b>Smart.</b> Be <b>Safe.</b> Be <b>Secure.</b></div>
+      </aside>
+      <main class="final-board">
+        <header class="final-heading">
+          <h3>Great job, you saved <em>Tej!</em></h3>
+          <p>You spotted the scams and stayed safe online.</p>
+        </header>
+        <div class="final-hero-row">
+          <img class="final-zara" src="./Assets/tej_21.webp" alt="Tej celebrating" />
+          <img class="final-shield" src="./Assets/final_badge.webp" alt="Safety shield badge" />
         </div>
-      </div>
+        <section class="final-spotted-panel">
+          <strong class="final-spotted-ribbon">Here's What You Learned:</strong>
+          <div class="final-spotted-grid">
+            ${learned.map((item) => `
+              <article class="final-clue-card">
+                <span class="final-clue-emoji" aria-hidden="true">${item.emoji}</span>
+                <strong>${item.title}</strong>
+                <small>${item.detail}</small>
+              </article>
+            `).join('')}
+          </div>
+          <p class="final-spotted-note">Report cyber fraud in India at <b>cybercrime.gov.in</b> or call <b>1930</b>.</p>
+        </section>
+        <button class="final-play-again" type="button">&#8635; <span>${t('playAgain')}</span></button>
+      </main>
     </section>
   `;
+  ui.host.querySelector('.final-play-again').addEventListener('click', restartGame);
 }
 
 function renderGame() {
@@ -508,21 +539,13 @@ function renderGame() {
   updateStaticText();
   updateProgressDots();
 
-  if (!state.started && !state.showSummary) {
-    setSidebarMode(false);
-    setGuide(TEJ.intro);
-    renderCoachTips(DEFAULT_TIPS);
-    renderStartScreen();
-    setFooterButtons([{ label: t('start'), onClick: startGame }]);
-    playVoice('intro');
-    return;
-  }
-
   if (state.showSummary) {
     setSidebarMode(true);
     setGuide(TEJ.done);
     renderComplete();
-    setFooterButtons([{ label: t('playAgain'), secondary: true, onClick: restartGame }]);
+    // The finale renders its own side panel + in-board Play Again button, and the
+    // app's left panel / footer are hidden via the .final-mission-stage CSS.
+    setFooterButtons([]);
     playVoice('complete');
     return;
   }
@@ -532,7 +555,28 @@ function renderGame() {
   const currentAnswer = state.answers[state.currentIndex];
   setGuide(!currentAnswer ? TEJ.ask : (currentAnswer.correct ? TEJ.correct : TEJ.wrong));
   renderCoachTips(SCREEN_TIPS[state.currentIndex] || DEFAULT_TIPS);
-  playVoice(`${currentAnswer ? 'f' : 'q'}_${screen.id}`);
+  // The first judge screen is the activity's starting screen: it plays the welcome
+  // intro and then this message's question clip back-to-back. Later screens play
+  // just their question clip, and any answered screen plays its feedback clip.
+  const isStartingScreen = state.currentIndex === 0 && !currentAnswer;
+  if (isStartingScreen && !state.voiceActivated) {
+    // First bubble shows the click-to-activate prompt; the voiceover stays silent
+    // until the first click anywhere (except the mute button). On activation the
+    // bubble is restored to its normal text and the intro + question clips play.
+    if (ui.tejSpeech) {
+      ui.tejSpeech.innerHTML = VOICE_PROMPT_HTML;
+      ui.tejSpeech.classList.add('is-voice-prompt');
+    }
+    armVoiceActivation(() => {
+      if (ui.tejSpeech) ui.tejSpeech.classList.remove('is-voice-prompt');
+      setGuide(TEJ.ask);
+      playVoice(['intro', `q_${screen.id}`]);
+    });
+  } else if (isStartingScreen) {
+    playVoice(['intro', `q_${screen.id}`]);
+  } else {
+    playVoice(`${currentAnswer ? 'f' : 'q'}_${screen.id}`);
+  }
 
   renderJudgeScreen();
   setFooterButtons([{
@@ -545,10 +589,6 @@ function renderGame() {
 function updateStaticText() {
   document.querySelector('[data-i18n="rotateTitle"]').textContent = t('rotateTitle');
   document.querySelector('[data-i18n="rotateMessage"]').textContent = t('rotateMessage');
-  document.getElementById('tutorialTitle').textContent = t('tutorialTitle');
-  for (let index = 1; index <= 4; index += 1) {
-    document.getElementById(`tutorialStep${index}`).textContent = t(`tutorialStep${index}`);
-  }
   document.getElementById('langPopupTitle').textContent = t('languageTitle');
   document.getElementById('langPopupSubtitle').textContent = t('languageSubtitle');
   document.getElementById('langCancelBtn').textContent = t('cancel');
@@ -557,13 +597,6 @@ function updateStaticText() {
   document.getElementById('langSelectedMessageEnd').textContent = t('languageSelectedEnd');
   syncMuteIconState();
   syncFullscreenState();
-}
-
-function startGame() {
-  state.started = true;
-  state.showSummary = false;
-  state.currentIndex = 0;
-  renderGame();
 }
 
 function submitVerdict(verdict) {
@@ -587,34 +620,13 @@ function nextScreen() {
 }
 
 function restartGame() {
-  state.started = false;
+  state.started = true;
   state.showSummary = false;
   state.currentIndex = 0;
   state.answers = Array(GAME_STEPS).fill(null);
   state.answerEffectKey = '';
   state.feedback = null;
   renderGame();
-}
-
-function setupTutorial() {
-  const openTutorialBtn = document.getElementById('openTutorialBtn');
-  if (openTutorialBtn) {
-    openTutorialBtn.addEventListener('click', () => {
-      ui.tutorialOverlay.style.display = 'flex';
-    });
-  }
-  const closeTutorial = () => {
-    ui.tutorialOverlay.style.display = 'none';
-    // first user interaction — (re)start the intro narration if still on the start screen
-    if (!state.started && !state.showSummary) {
-      currentVoiceKey = '';
-      playVoice('intro');
-    }
-  };
-  document.getElementById('closeTutorialBtn').addEventListener('click', closeTutorial);
-  ui.tutorialOverlay.addEventListener('click', (event) => {
-    if (event.target === ui.tutorialOverlay) closeTutorial();
-  });
 }
 
 function setupLanguageSwitcher() {
@@ -731,10 +743,10 @@ function setupControls() {
     syncMuteIconState();
     if (state.muted) {
       stopVoice();
-    } else if (currentVoiceKey) {
-      const key = currentVoiceKey;
+    } else if (currentVoiceList.length) {
+      const list = currentVoiceList;
       currentVoiceKey = '';
-      playVoice(key);
+      playVoice(list);
     }
   });
   const resetGameBtn = document.getElementById('resetGameBtn');
@@ -760,13 +772,13 @@ function initialize() {
   }
   buildProgressDots();
   setupControls();
-  setupTutorial();
   setupLanguageSwitcher();
   setupVoiceUnlock();
-  state.started = false;
+  // Activity 2 opens directly on the first judge screen (image 3). The How to Play
+  // modal and the start screen are removed; the intro voiceover plays here instead.
+  state.started = true;
+  state.currentIndex = 0;
   renderGame();
-  ui.tutorialOverlay.style.display = 'flex';
-  playVoice('how_to_play');
   window.setTimeout(() => ui.loader.classList.add('hidden'), 250);
 }
 

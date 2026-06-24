@@ -160,39 +160,41 @@ button {
   display: flex;
   gap: 16px;
   flex-wrap: nowrap;
+  #muteBtn { position: relative; top: 12px; }
 }
 
 .icon-circle {
-  width: 42px;
-  height: 42px;
-  border: 3px solid var(--brand-secondary);
+  width: 56px;
+  height: 56px;
+  border: 1px solid #d7cbff;
   border-radius: 50%;
   display: flex;
   align-items: center;
   justify-content: center;
-  color: var(--brand-secondary);
-  background: rgba(255, 255, 255, 0.92);
+  color: #fff;
+  background: rgba(247, 243, 255, 0.92);
   cursor: pointer;
   transition: transform 0.2s ease, box-shadow 0.2s ease, background-color 0.2s ease;
+  box-shadow: 0 6px 0 rgba(183, 202, 232, 0.42);
 }
 
 .icon-circle:hover {
-  background-color: #5eace7;
+  background-color: #f2edff;
   transform: translateY(-1px);
-  box-shadow: 0 6px 16px rgba(0, 0, 0, 0.2);
+  box-shadow: 0 6px 16px rgba(73, 90, 122, 0.18);
 }
 
 .icon-circle:active {
-  background-color: var(--brand-highlight);
+  background-color: #d7cbff;
   transform: scale(0.95);
 }
 
 .icon-circle svg {
-  width: 24px;
-  height: 24px;
+  width: 32px;
+  height: 32px;
   display: block;
   flex-shrink: 0;
-  color: var(--brand-secondary);
+  color: #495a7a;
   fill: none;
   opacity: 1;
   visibility: visible;
@@ -225,7 +227,7 @@ button {
 
 .icon-circle:hover svg,
 .icon-circle:active svg {
-  color: var(--brand-secondary);
+  color: #495a7a;
 }
 
 .mute-on-icon,
@@ -255,7 +257,7 @@ button {
 
 .right-panel {
   flex: 1;
-  background: var(--surface-primary) url('./Assets/winter_background1.webp') center / cover no-repeat;
+  background: var(--surface-primary) url('./Assets/winter_Backk.webp') center / cover no-repeat;
   border-radius: 10px;
   padding: clamp(10px, 1.6vh, 16px);
   border: 0;
