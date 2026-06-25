@@ -109,7 +109,7 @@ const gameCopy = {
     appTitle: 'Real or Fake Sender?',
     title: 'Real or Fake Sender?',
     subtitle: 'Read each message. Tap FAKE on the left or REAL on the right, then read the clue.',
-    coachTitle: 'Detective Tip',
+    coachTitle: 'Safety Coach',
     coach: 'Fake messages often use strange links, scary words, big rewards, or hurry-up words. Real alerts are usually simple and do not ask for private details.',
     boardTitle: 'Activity 2: Fake or Real?',
     start: 'Start',
@@ -289,9 +289,9 @@ function setFooterButtons(buttons) {
 }
 
 function playAudio(file) {
-  if (state.muted) return;
   const audio = new Audio(file);
-  audio.volume = 0.38;
+  // When muted, keep playing but at volume 0; unmute restores the normal level.
+  audio.volume = state.muted ? 0 : 0.38;
   audio.play().catch(() => {});
 }
 
@@ -299,7 +299,6 @@ function playAudio(file) {
 const VO_PATH = './audio/voiceover/english/';
 let currentVoice = null;
 let currentVoiceKey = '';    // joined id of the current narration (avoids replays on re-render)
-let currentVoiceList = [];   // full narration, kept so unmute can resume it
 let voiceQueue = [];         // clips still waiting to play in the current narration
 
 // Play one screen's narration. Pass a single key (e.g. 'complete') or an ordered
@@ -309,9 +308,9 @@ function playVoice(keys) {
   const id = list.join('>');
   if (id === currentVoiceKey) return; // don't replay the same screen's narration
   currentVoiceKey = id;
-  currentVoiceList = list.slice();
   stopVoice();
-  if (state.muted) return;
+  // Always play (even when muted) so narration keeps advancing; mute just
+  // drops the volume to 0 in playNextVoice().
   voiceQueue = list.slice();
   playNextVoice();
 }
@@ -324,7 +323,7 @@ function playNextVoice() {
     return;
   }
   const audio = new Audio(`${VO_PATH}${key}.ogg`);
-  audio.volume = 0.95;
+  audio.volume = state.muted ? 0 : 0.95;
   currentVoice = audio;
   audio.addEventListener('ended', () => {
     if (currentVoice === audio) playNextVoice();
@@ -344,7 +343,8 @@ function stopVoice() {
 // blocked (created but never started) on the first tap anywhere.
 function setupVoiceUnlock() {
   document.addEventListener('pointerdown', () => {
-    if (!state.muted && currentVoice && currentVoice.paused && currentVoice.currentTime === 0) {
+    // Resume a blocked clip even when muted — it just plays silently (volume 0).
+    if (currentVoice && currentVoice.paused && currentVoice.currentTime === 0) {
       currentVoice.play().catch(() => {});
     }
   });
@@ -524,7 +524,7 @@ function renderComplete() {
 function renderGame() {
   document.title = t('appTitle');
   document.documentElement.lang = currentLanguage;
-  ui.title.textContent = 'Spot the Scams!';
+  ui.title.textContent = 'SPOT THE SCAMS!';
   ui.subtitle.textContent = state.showSummary ? t('completeCoach') : t('subtitle');
   ui.coachEyebrow.textContent = t('coachTitle');
   ui.coach.textContent = t('coach');
@@ -741,13 +741,9 @@ function setupControls() {
   ui.muteBtn.addEventListener('click', () => {
     state.muted = !state.muted;
     syncMuteIconState();
-    if (state.muted) {
-      stopVoice();
-    } else if (currentVoiceList.length) {
-      const list = currentVoiceList;
-      currentVoiceKey = '';
-      playVoice(list);
-    }
+    // Don't stop the audio — keep it playing and just toggle its volume, so the
+    // narration keeps advancing. Unmute restores the normal level.
+    if (currentVoice) currentVoice.volume = state.muted ? 0 : 0.95;
   });
   const resetGameBtn = document.getElementById('resetGameBtn');
   if (resetGameBtn) resetGameBtn.addEventListener('click', restartGame);
