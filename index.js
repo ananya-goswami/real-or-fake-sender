@@ -189,6 +189,12 @@ function setGuide(pose) {
 const VOICE_PROMPT_HTML = 'Click anywhere on the page <em>except the bubbles</em> to activate voice.';
 let voiceActivationHandler = null;
 
+// "Tap to Open" startup gate (ported from the bubble-burst game). The loader
+// overlay stays up showing the spinner + prompt, blurring the app behind it,
+// until the first tap/keypress — which also doubles as the gesture that unlocks
+// audio playback.
+let startupGateRelease = null;
+
 function clearVoiceActivation() {
   if (!voiceActivationHandler) return;
   document.removeEventListener('pointerdown', voiceActivationHandler);
@@ -207,6 +213,40 @@ function armVoiceActivation(onActivate) {
   };
   document.addEventListener('pointerdown', voiceActivationHandler);
   document.addEventListener('touchstart', voiceActivationHandler);
+}
+
+function clearStartupGateListeners() {
+  if (!startupGateRelease) return;
+  startupGateRelease();
+  startupGateRelease = null;
+}
+
+function hideStartupGate() {
+  clearStartupGateListeners();
+  document.body.classList.remove('startup-gate-active');
+  ui.loader?.classList.add('hidden');
+}
+
+function activateStartupGate(onOpen) {
+  if (!ui.loader) {
+    onOpen?.();
+    return;
+  }
+  clearStartupGateListeners();
+  ui.loader.classList.remove('hidden');
+  document.body.classList.add('startup-gate-active');
+  const openGate = (event) => {
+    if (event.type === 'keydown' && !['Enter', ' ', 'Spacebar'].includes(event.key)) return;
+    event.preventDefault?.();
+    hideStartupGate();
+    onOpen?.();
+  };
+  ui.loader.addEventListener('pointerdown', openGate, { once: true });
+  document.addEventListener('keydown', openGate);
+  startupGateRelease = () => {
+    ui.loader.removeEventListener('pointerdown', openGate);
+    document.removeEventListener('keydown', openGate);
+  };
 }
 
 function renderCoachTips(tips) {
@@ -495,11 +535,14 @@ function renderComplete() {
       <main class="final-board">
         <header class="final-heading">
           <h3>Great job, you saved <em>Tej!</em></h3>
-          <p>You spotted the scams and stayed safe online.</p>
+          <p class="final-report">
+            <span class="final-report-icon" aria-hidden="true">📞</span>
+            <span class="final-report-text">Report cyber fraud in India at <b>cybercrime.gov.in</b> or call <b>1930</b>.</span>
+          </p>
         </header>
+        <img class="final-shield" src="./Assets/final_badge.webp" alt="Safety shield badge" />
         <div class="final-hero-row">
           <img class="final-zara" src="./Assets/tej_21.webp" alt="Tej celebrating" />
-          <img class="final-shield" src="./Assets/final_badge.webp" alt="Safety shield badge" />
         </div>
         <section class="final-spotted-panel">
           <strong class="final-spotted-ribbon">Here's What You Learned:</strong>
@@ -512,7 +555,6 @@ function renderComplete() {
               </article>
             `).join('')}
           </div>
-          <p class="final-spotted-note">Report cyber fraud in India at <b>cybercrime.gov.in</b> or call <b>1930</b>.</p>
         </section>
         <button class="final-play-again" type="button">&#8635; <span>${t('playAgain')}</span></button>
       </main>
@@ -731,6 +773,8 @@ function syncFullscreenState() {
   const exitIcon = btn.querySelector('.fullscreen-exit-icon');
   const active = Boolean(document.fullscreenElement);
   btn.classList.toggle('is-fullscreen', active);
+  // Drive fullscreen-only layout tweaks (e.g. the finale panel lift) off the body.
+  document.body.classList.toggle('is-app-fullscreen', active);
   btn.title = active ? t('exitFullscreen') : t('enterFullscreen');
   btn.setAttribute('aria-label', active ? t('exitFullscreen') : t('enterFullscreen'));
   if (enterIcon) enterIcon.style.display = active ? 'none' : 'block';
@@ -775,7 +819,17 @@ function initialize() {
   state.started = true;
   state.currentIndex = 0;
   renderGame();
-  window.setTimeout(() => ui.loader.classList.add('hidden'), 250);
+  // Hold on the "Tap to Open" gate until the player taps. That tap is the first
+  // user gesture, so it also unlocks audio and kicks off the intro voiceover.
+  activateStartupGate(() => {
+    if (state.voiceActivated) return;
+    clearVoiceActivation();
+    state.voiceActivated = true;
+    if (ui.tejSpeech) ui.tejSpeech.classList.remove('is-voice-prompt');
+    setGuide(TEJ.ask);
+    const screen = JUDGE_SCREENS[state.currentIndex];
+    playVoice(['intro', `q_${screen.id}`]);
+  });
 }
 
 window.addEventListener('load', initialize);

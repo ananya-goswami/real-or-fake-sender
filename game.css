@@ -1948,7 +1948,7 @@ body:has(.final-mission-stage) .top-bar {
   z-index: 30;
 }
 
-body:has(.final-mission-stage) #muteBtn {
+body:has(.final-mission-stage) .top-icons .icon-circle {
   position: relative;
   top: 0;
 }
@@ -2142,6 +2142,15 @@ body:has(.final-mission-stage) .interaction-host-area {
   text-align: center;
 }
 
+/* On shorter windowed viewports Tej's head rises into the heading area, so nudge
+   the heading + subtitle right of centre to clear his head. Only kicks in when
+   short enough to overlap; fullscreen overrides back to centre (it has the room). */
+@media (max-height: 780px) {
+  .final-heading {
+    left: 58%;
+  }
+}
+
 .final-heading h3 {
   margin: 0;
   color: #1f1a5a;
@@ -2158,23 +2167,68 @@ body:has(.final-mission-stage) .interaction-host-area {
   font-style: normal;
 }
 
+/* The cyber-fraud reporting line is the screen's real-world takeaway. It sits
+   directly on the scene (no box) — kept noticeable with a small icon, the key
+   terms highlighted, a faint halo for legibility, and a gentle one-time entrance. */
 .final-heading p {
-  width: min(670px, 85%);
-  margin: 8px auto 0;
-  color: #3d347d;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  max-width: min(92%, 720px);
+  margin: 10px auto 0;
+  color: #2a2266;
   font-size: clamp(0.92rem, 1.55vw, 1.42rem);
+  font-weight: 800;
+  line-height: 1.2;
+  text-shadow: 0 1px 3px rgba(255, 255, 255, 0.55);
+  animation: report-pill-in 0.6s cubic-bezier(0.22, 1, 0.36, 1) 0.5s both;
+}
+
+.final-report-icon {
+  flex-shrink: 0;
+  font-size: 1.2em;
+  line-height: 1;
+}
+
+.final-heading p b {
+  color: #ffc20a;
   font-weight: 900;
-  line-height: 1.15;
+  /* The background is LIGHT and variable (purple sky + white clouds + snow), so a
+     light golden fill alone washes out. A thin dark outline defines the glyphs on
+     any of those backgrounds while the gold fill stays bright/warm; the drop
+     shadow lifts it off the scene. paint-order keeps the fill from being eaten. */
+  -webkit-text-stroke: 2px #3a2200;
+  paint-order: stroke fill;
+  text-shadow: 0 2px 3px rgba(0, 0, 0, 0.38);
+}
+
+@keyframes report-pill-in {
+  from { opacity: 0; transform: translateY(10px) scale(0.96); }
+  to   { opacity: 1; transform: translateY(0) scale(1); }
+}
+
+/* Respect users who prefer less motion: shorten the entrance. */
+@media (prefers-reduced-motion: reduce) {
+  .final-heading p {
+    animation: report-pill-in 0.4s ease both;
+  }
 }
 
 .final-hero-row {
   position: absolute;
-  inset: clamp(120px, 16vh, 168px) 0 auto;
+  left: 0;
+  right: 0;
+  top: auto;
+  /* Bottom-anchored to the SAME edge as the "what you learned" panel so Tej and
+     the panel scale together as the viewport grows. The offset ≈ the panel's own
+     bottom inset + its height (~163px), so (windowed) Tej's bottom rests ON the
+     white box's top edge. Fullscreen restores +172px below and lifts the box
+     instead — see body.is-app-fullscreen overrides. */
+  bottom: calc(clamp(76px, 10vh, 104px) + 133px);
   height: clamp(260px, 42vh, 420px);
 }
 
-.final-zara,
-.final-shield {
+.final-zara {
   position: absolute;
   z-index: 4;
   bottom: 0;
@@ -2197,12 +2251,17 @@ body:has(.final-mission-stage) .interaction-host-area {
 }
 
 .final-shield {
-  /* Activity 4's shield size, but sat lower than its 37% so it clears Activity
-     2's two-line heading/subtitle (which is taller than Activity 4's one-liner). */
-  left: 47%;
-  bottom: 22%;
+  /* Horizontally centred; sat a little above the board's vertical middle
+     (windowed). Fullscreen pulls it back to dead-centre — see the
+     body.is-app-fullscreen override below. */
+  position: absolute;
+  z-index: 4;
+  left: 50%;
+  top: 44%;
   width: clamp(104px, 11vw, 176px);
-  transform: translateX(-50%);
+  height: auto;
+  object-fit: contain;
+  transform: translate(-50%, -50%);
 }
 
 .final-spotted-panel {
@@ -2314,6 +2373,39 @@ body:has(.final-mission-stage) .interaction-host-area {
 }
 
 /* ============================================================================
+   FULLSCREEN ONLY — lift the bottom cluster (white "what you learned" box + its
+   blue frame + the Play Again button) up by 16px so the white box's top tucks
+   right against Tej's bottom. Toggled by the is-app-fullscreen body class that
+   syncFullscreenState() sets while the browser is in fullscreen. Bump the 16px
+   here to lift more / less.
+   ============================================================================ */
+body.is-app-fullscreen .final-spotted-panel {
+  bottom: calc(clamp(76px, 10vh, 104px) + 16px);
+}
+
+body.is-app-fullscreen .final-board::after {
+  bottom: 24px;
+}
+
+body.is-app-fullscreen .final-play-again {
+  bottom: 30px;
+}
+
+/* Fullscreen keeps Tej a touch higher (the lifted box meets him) and the badge
+   dead-centre, rather than the windowed "Tej sits on the box / badge nudged up". */
+body.is-app-fullscreen .final-hero-row {
+  bottom: calc(clamp(76px, 10vh, 104px) + 147px);
+}
+
+body.is-app-fullscreen .final-shield {
+  top: 50%;
+}
+
+body.is-app-fullscreen .final-heading {
+  left: 50%;
+}
+
+/* ============================================================================
    LANDSCAPE RESPONSIVENESS
    The game is portrait-blocked (.portrait-mode-blocker), so it always runs in
    landscape. Most sizing is already fluid via clamp(); these breakpoints keep
@@ -2328,7 +2420,8 @@ body:has(.final-mission-stage) .interaction-host-area {
   }
 
   .final-hero-row {
-    inset: clamp(108px, 15vh, 150px) 0 auto;
+    bottom: calc(clamp(72px, 9vh, 98px) + 158px);
+    height: clamp(240px, 40vh, 380px);
   }
 }
 
