@@ -783,6 +783,11 @@ function syncFullscreenState() {
 
 function setupControls() {
   ui.muteBtn.addEventListener('click', () => {
+    // Audible click feedback on the sound toggle itself — plays in both
+    // directions (muting and unmuting) so the tap always feels responsive.
+    const click = new Audio('./audio/button-click.ogg');
+    click.volume = 0.5;
+    click.play().catch(() => {});
     state.muted = !state.muted;
     syncMuteIconState();
     // Don't stop the audio — keep it playing and just toggle its volume, so the
