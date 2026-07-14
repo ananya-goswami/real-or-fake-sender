@@ -78,6 +78,7 @@ html,
 body {
   height: 100%;
   overflow: hidden;
+  user-select: none;
 }
 
 body,
@@ -158,7 +159,8 @@ button {
 
 .top-icons {
   display: flex;
-  gap: 16px;
+  /* Scale the gap with the viewport so the pair shrinks on smaller screens. */
+  gap: clamp(8px, 1.6vmin, 16px);
   flex-wrap: nowrap;
   align-items: center;
 }
@@ -171,8 +173,10 @@ button {
 }
 
 .icon-circle {
-  width: 56px;
-  height: 56px;
+  /* Full 56px on wide screens; shrink with screen WIDTH (vw) as the window
+     narrows so the pair doesn't collide with the centred title box. */
+  width: clamp(32px, 4vw, 56px);
+  height: clamp(32px, 4vw, 56px);
   border: 1px solid #d7cbff;
   border-radius: 50%;
   display: flex;
@@ -195,8 +199,8 @@ button {
 }
 
 .icon-circle svg {
-  width: 32px;
-  height: 32px;
+  width: clamp(20px, 2.5vw, 32px);
+  height: clamp(20px, 2.5vw, 32px);
   display: block;
   flex-shrink: 0;
   color: #495a7a;
@@ -262,7 +266,7 @@ button {
 
 .right-panel {
   flex: 1;
-  background: var(--surface-primary) url('./Assets/winter_Backk.webp') center / cover no-repeat;
+  background: var(--surface-primary) url('./Assets/background3.webp') center / cover no-repeat;
   border-radius: 10px;
   padding: clamp(10px, 1.6vh, 16px);
   border: 0;
@@ -333,15 +337,19 @@ button {
 
 .check-btn-wrap .btn {
   width: fit-content;
-  min-width: clamp(9rem, 13vw, 10.5rem);
-  height: clamp(3.25rem, 7vh, 4.125rem);
-  padding: clamp(0.65rem, 1.8vh, 1.125rem) clamp(1.2rem, 3.2vw, 2.375rem);
+  min-width: clamp(8rem, 13vw, 10.5rem);
+  /* min-height (not fixed height) + nowrap so the label ("NEXT SCREEN") always
+     stays on ONE line and the button grows to fit it, instead of the text
+     wrapping to two lines and spilling outside the pill on narrow screens. */
+  min-height: clamp(2.8rem, 6vh, 4.125rem);
+  padding: clamp(0.55rem, 1.6vh, 1.125rem) clamp(1.1rem, 3vw, 2.375rem);
   border: none;
   border-radius: clamp(1.5rem, 3.5vh, 2.0625rem);
   background-color: var(--brand-primary);
   color: var(--text-inverse);
-  font-size: clamp(1rem, 2.5vh, 1.5rem);
+  font-size: clamp(0.95rem, 2.2vh, 1.5rem);
   font-weight: 800;
+  white-space: nowrap;
   cursor: pointer;
   transition: background-color 0.2s ease, transform 0.2s ease, opacity 0.2s ease;
 }

@@ -53,6 +53,67 @@ const JUDGE_SCREENS = [
 
 const GAME_STEPS = JUDGE_SCREENS.length;
 
+const GAME_CATEGORY = 'scam-judge';
+
+// --- Analytics bridge (Android WebView) ---
+function sendGameEvent(functionName, dataArgs) {
+  console.log(`%cANALYTICS: ${functionName}`, 'color: #386AF6; font-weight: bold;', dataArgs);
+  const message = {
+    functionName,
+    args: dataArgs
+  };
+  const jsonString = JSON.stringify(message);
+  if (window.AndroidBridge && window.AndroidBridge.postMessage) {
+    window.AndroidBridge.postMessage(jsonString);
+  }
+}
+
+function practiceActivityStarted(data) {
+  sendGameEvent('practiceActivityStarted', data);
+}
+
+function practiceActivityCompleted(data) {
+  sendGameEvent('practiceActivityCompleted', data);
+}
+
+function practiceQuestionAttempted(data) {
+  sendGameEvent('practiceQuestionAttempted', data);
+}
+
+function closeActivity() {
+  sendGameEvent('closeActivity', {});
+}
+
+// Timestamp of when play actually started (loader tapped), a one-shot guard so the
+// completion event fires only once per play-through, and the learner's first-attempt
+// correct count (each screen is answered once, so this is the run's real score).
+let gameStartTime = 0;
+let completionTracked = false;
+let firstTryCorrectCount = 0;
+
+function startAnalyticsRun() {
+  gameStartTime = Date.now();
+  completionTracked = false;
+  firstTryCorrectCount = 0;
+  practiceActivityStarted({
+    category: GAME_CATEGORY,
+    language: currentLanguage || initialLang
+  });
+}
+
+function trackGameCompletion() {
+  if (completionTracked) return;
+  completionTracked = true;
+  const elapsedSeconds = gameStartTime ? (Date.now() - gameStartTime) / 1000 : 0;
+  practiceActivityCompleted({
+    category: GAME_CATEGORY,
+    language: currentLanguage || initialLang,
+    timeSpent: Math.round(elapsedSeconds),
+    totalQuestion: GAME_STEPS,
+    correctQuestion: firstTryCorrectCount
+  });
+}
+
 // Detective tips shown in the sidebar — 3 short, complete tips per screen,
 // each naming a real clue in THAT message (Activity 3 style). Order matches
 // JUDGE_SCREENS: sbi, hdfc, jio, amazon, upi. Easy English for Class 6-8.
@@ -103,6 +164,20 @@ const supportedLanguages = {
   mr: 'Marathi',
   te: 'Telugu'
 };
+
+// Language handed in by the host app (getEnvironment), falling back to the bundled
+// default. A saved in-game choice (localStorage) still wins in initialize().
+let initialLang = 'en';
+if (typeof window.getEnvironment === 'function') {
+  try {
+    const env = window.getEnvironment();
+    if (env && env.app_language && Object.prototype.hasOwnProperty.call(supportedLanguages, env.app_language)) {
+      initialLang = env.app_language;
+    }
+  } catch (error) {
+    console.warn('Error calling getEnvironment(), falling back to default language.', error);
+  }
+}
 
 const gameCopy = {
   en: {
@@ -227,14 +302,79 @@ function hideStartupGate() {
   ui.loader?.classList.add('hidden');
 }
 
+// Spinner-only phase: the loader shows but is NOT clickable and hides the
+// "Tap to Open" text until the game's assets have finished loading.
+function setStartupGateLoading() {
+  if (!ui.loader) return;
+  clearStartupGateListeners();
+  ui.loader.classList.remove('hidden');
+  ui.loader.removeAttribute('role');
+  ui.loader.removeAttribute('tabindex');
+  ui.loader.setAttribute('aria-busy', 'true');
+  ui.loader.setAttribute('aria-label', 'Loading');
+  const text = ui.loader.querySelector('.loader-overlay-text');
+  if (text) text.hidden = true;
+  document.body.classList.add('startup-gate-active');
+}
+
+// Assets are ready: reveal "Tap to Open" and make the gate clickable.
+function setStartupGateReady() {
+  if (!ui.loader) return;
+  ui.loader.classList.remove('hidden');
+  ui.loader.setAttribute('role', 'button');
+  ui.loader.setAttribute('tabindex', '0');
+  ui.loader.setAttribute('aria-label', 'Tap to open the game');
+  ui.loader.setAttribute('aria-busy', 'false');
+  const text = ui.loader.querySelector('.loader-overlay-text');
+  if (text) text.hidden = false;
+  document.body.classList.add('startup-gate-active');
+}
+
+// Images the game shows across its screens, preloaded before the "Tap to Open"
+// gate becomes clickable so nothing pops in mid-play.
+const GAME_IMAGE_ASSETS = [
+  './Assets/loader.webp',
+  './Assets/logo.webp',
+  './Assets/phone_outline.webp',
+  './Assets/clue_box.webp',
+  './Assets/background3.webp',
+  './Assets/badge.webp',
+  './Assets/target.webp',
+  './Assets/final_shield_icon.webp',
+  './Assets/final_badge.webp',
+  './Assets/tej_15.webp',
+  './Assets/tej_16.webp',
+  './Assets/tej_19.webp',
+  './Assets/tej_20.webp',
+  './Assets/tej_21.webp'
+];
+
+function preloadImage(src) {
+  return new Promise((resolve) => {
+    const img = new Image();
+    img.onload = () => resolve();
+    img.onerror = () => resolve();
+    img.src = src;
+  });
+}
+
+// Resolves once the game's visible assets (images + fonts) are ready, so the
+// "Tap to Open" gate only becomes clickable after everything has loaded.
+async function waitForGameAssets() {
+  const tasks = GAME_IMAGE_ASSETS.map(preloadImage);
+  if (document.fonts && document.fonts.ready) {
+    tasks.push(document.fonts.ready.catch(() => {}));
+  }
+  await Promise.all(tasks);
+}
+
 function activateStartupGate(onOpen) {
   if (!ui.loader) {
     onOpen?.();
     return;
   }
   clearStartupGateListeners();
-  ui.loader.classList.remove('hidden');
-  document.body.classList.add('startup-gate-active');
+  setStartupGateReady();
   const openGate = (event) => {
     if (event.type === 'keydown' && !['Enter', ' ', 'Spacebar'].includes(event.key)) return;
     event.preventDefault?.();
@@ -505,6 +645,8 @@ function renderJudgeScreen() {
 }
 
 function renderComplete() {
+  // Game finished — fire the completion analytics once (guarded internally).
+  trackGameCompletion();
   // Content is unchanged from Activity 2; only the layout/positioning follows
   // Activity 4's "final-mission-stage" finale (side panel + board with absolutely
   // positioned heading, hero row, learned panel and play-again button).
@@ -644,8 +786,18 @@ function updateStaticText() {
 function submitVerdict(verdict) {
   const screen = JUDGE_SCREENS[state.currentIndex];
   const correct = verdict === screen.verdict;
+  // First (and only) attempt for this screen — buttons lock after answering, so
+  // count it toward the completion event's score.
+  const firstAttempt = !state.answers[state.currentIndex];
   state.answers[state.currentIndex] = { verdict, correct };
   state.answerEffectKey = `${screen.id}:${verdict}`;
+  if (firstAttempt && correct) firstTryCorrectCount += 1;
+  practiceQuestionAttempted({
+    category: GAME_CATEGORY,
+    question: state.currentIndex + 1,
+    selectedAnswer: verdict,
+    isCorrect: correct
+  });
   playAudio(correct ? './audio/mixkit-winning-notification-2018.ogg' : './audio/incorrect-answer.ogg');
   renderGame();
 }
@@ -668,6 +820,8 @@ function restartGame() {
   state.answers = Array(GAME_STEPS).fill(null);
   state.answerEffectKey = '';
   state.feedback = null;
+  // New play-through: start a fresh analytics run (resets timer/score/guard).
+  startAnalyticsRun();
   renderGame();
 }
 
@@ -810,7 +964,11 @@ function setupControls() {
   }
 }
 
-function initialize() {
+async function initialize() {
+  // Keep the loader spinner up and non-clickable until the game's assets have
+  // finished loading; only then reveal the clickable "Tap to Open" gate.
+  setStartupGateLoading();
+  currentLanguage = initialLang;
   const savedLanguage = localStorage.getItem('activity_2_language');
   if (savedLanguage && supportedLanguages[savedLanguage]) {
     currentLanguage = savedLanguage;
@@ -824,9 +982,11 @@ function initialize() {
   state.started = true;
   state.currentIndex = 0;
   renderGame();
+  await waitForGameAssets();
   // Hold on the "Tap to Open" gate until the player taps. That tap is the first
   // user gesture, so it also unlocks audio and kicks off the intro voiceover.
   activateStartupGate(() => {
+    startAnalyticsRun();
     if (state.voiceActivated) return;
     clearVoiceActivation();
     state.voiceActivated = true;
@@ -836,5 +996,38 @@ function initialize() {
     playVoice(['intro', `q_${screen.id}`]);
   });
 }
+
+// Pause the narration when the tab is hidden, and resume the very same clip
+// (from where it left off) when the tab becomes visible again. Short SFX
+// (correct/wrong/click) are fire-and-forget, so only the voiceover is tracked.
+let audioPausedForHiddenTab = [];
+
+function pauseAudioForHiddenTab() {
+  audioPausedForHiddenTab = [];
+  if (currentVoice && !currentVoice.paused && !currentVoice.ended) {
+    audioPausedForHiddenTab.push(currentVoice);
+    currentVoice.pause();
+  }
+}
+
+function resumeAudioForVisibleTab() {
+  const clips = audioPausedForHiddenTab;
+  audioPausedForHiddenTab = [];
+  clips.forEach((audio) => {
+    if (audio && audio.paused && !audio.ended) {
+      audio.play().catch(() => {});
+    }
+  });
+}
+
+// NOTE: visibilitychange only pauses/resumes the audio in place — it must NOT
+// re-render the game or restart narration.
+document.addEventListener('visibilitychange', () => {
+  if (document.hidden) {
+    pauseAudioForHiddenTab();
+  } else {
+    resumeAudioForVisibleTab();
+  }
+});
 
 window.addEventListener('load', initialize);

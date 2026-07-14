@@ -240,24 +240,39 @@
 .judge-hero {
   min-height: 0;
   display: grid;
-  align-items: stretch;
+  /* Center the gameplay block vertically instead of stretching it to the full
+     play-area height. Stretching made the verdict panel (and its 1fr placeholder
+     "hint box") tower over the aspect-locked phone in fullscreen; centering lets
+     the layout size to its content so the phone and hint box stay balanced. */
+  align-items: center;
   justify-items: center;
 }
 
 .judge-layout {
   width: min(960px, 100%);
   min-height: 0;
+  /* Never exceed the play area. On short/narrow viewports this caps the layout so
+     the stretched columns compress and the feedback card scrolls internally
+     (overflow-y:auto) instead of the phone/hint box overflowing the hero. */
+  max-height: 100%;
   display: grid;
-  grid-template-columns: minmax(220px, 350px) minmax(240px, 1fr);
+  /* Columns shrink with the board so the phone + verdict stay side by side as the
+     width decreases. The phone's max scales with the viewport (vw) so it's large
+     on wide screens but yields width to the verdict panel (FAKE/REAL buttons) on
+     narrow ones, keeping the controls from being clipped. */
+  grid-template-columns: minmax(120px, clamp(200px, 22vw, 320px)) minmax(220px, 1fr);
   align-items: stretch;
-  gap: 18px;
+  gap: clamp(10px, 1.6vw, 18px);
 }
 
 .phone-mockup {
-  width: min(100%, 330px);
+  width: min(100%, 320px);
   height: 100%;
-  min-height: 340px;
-  max-height: 520px;
+  /* Height follows the available space and can shrink further on tight viewports
+     so the phone never pushes the hero past the bottom (clipping the home bar /
+     feedback card). */
+  min-height: clamp(180px, 28vh, 320px);
+  max-height: min(520px, 82vh);
   justify-self: center;
   align-self: center;
   border: 10px solid #111827;
@@ -403,7 +418,8 @@
   border-radius: 6px 18px 18px 18px;
   background: #ffffff;
   border: 1px solid #e6eaf0;
-  padding: 14px 16px;
+  /* Padding scales down on smaller phones so the message text keeps its room. */
+  padding: clamp(9px, 1.4vh, 14px) clamp(11px, 1.2vw, 16px);
   box-shadow: 0 10px 20px rgba(15, 23, 42, 0.10);
 }
 
@@ -411,8 +427,10 @@
   margin: 0;
   color: #1f2937;
   font-weight: 700;
-  font-size: clamp(1rem, 1.55vw, 1.2rem);
-  line-height: 1.42;
+  /* Lower min + tighter leading so the full message fits the (fixed-ratio) phone
+     as it shrinks, instead of being clipped at the bottom. */
+  font-size: clamp(0.8rem, 1.45vw, 1.2rem);
+  line-height: 1.34;
 }
 
 .fake-link {
@@ -542,12 +560,15 @@
   border: 2px solid #cbd5e1;
   border-left-width: 8px;
   background: linear-gradient(180deg, #ffffff, #f8fafc);
-  padding: 16px 18px;
+  padding: clamp(10px, 1.6vh, 16px) clamp(12px, 1.4vw, 18px);
   display: flex;
   flex-direction: column;
   justify-content: center;
   color: var(--text-secondary);
   box-shadow: 0 12px 24px rgba(15, 23, 42, 0.08);
+  /* If the explanation is taller than the panel's remaining space on small
+     screens, scroll inside the card rather than spilling over the buttons. */
+  overflow-y: auto;
 }
 
 .feedback-card.placeholder {
@@ -585,6 +606,9 @@
 
 .feedback-card.show {
   animation: feedback-slide 0.25s ease both;
+  /* Top-align the answered feedback so it grows/scrolls downward and never
+     overflows upward onto the FAKE/REAL buttons. */
+  justify-content: flex-start;
 }
 
 .feedback-card.correct {
@@ -607,15 +631,17 @@
 
 .feedback-card h5 {
   margin-top: 8px;
-  font-size: clamp(1.25rem, 2.2vw, 1.5rem);
+  /* Lower min so the clue heading + text fit the card on small screens. */
+  font-size: clamp(1.05rem, 2.2vw, 1.5rem);
   color: var(--text-primary);
 }
 
 .feedback-card p {
   margin-top: 8px;
-  line-height: 1.45;
+  line-height: 1.4;
   font-weight: 700;
-  font-size: clamp(1.02rem, 1.65vw, 1.22rem);
+  /* Lower min so the explanation doesn't overflow/clip the card when narrow. */
+  font-size: clamp(0.88rem, 1.65vw, 1.22rem);
 }
 
 .result-badge {
@@ -1058,8 +1084,10 @@
   align-items: center;
   justify-content: center;
   gap: 13px;
-  width: min(600px, 68%);
-  padding: clamp(7px, 1.1vh, 11px) 38px;
+  /* Narrower so the centred banner's right edge stays clear of the top-right
+     icons as the board shrinks (was 600px / 68%). */
+  width: min(540px, 58%);
+  padding: clamp(7px, 1.1vh, 11px) clamp(20px, 3vw, 38px);
   border-radius: 28px;
   background: #21145f;
   color: #ffffff;
@@ -1523,15 +1551,9 @@
 }
 
 @media (max-width: 900px) {
-  .judge-layout {
-    grid-template-columns: 1fr;
-    overflow: auto;
-  }
-
-  .phone-mockup {
-    height: 420px;
-  }
-
+  /* Keep the phone + verdict side by side (they shrink via the base minmax
+     columns). Collapsing to one column crammed/overlapped them on short
+     landscape viewports, so the single-column + fixed phone height are dropped. */
   .completion-list {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
@@ -1539,10 +1561,23 @@
 
 @media (max-width: 760px) {
   .detective-board,
-  .verdict-buttons,
   .completion-list,
   .finale-learned-grid {
     grid-template-columns: 1fr;
+  }
+
+  /* Keep FAKE / REAL on the SAME x-axis at this narrow width — shrink the pills
+     and their label instead of stacking them into one column (which pushed the
+     hint box down and wasted horizontal space). minmax(0, 1fr) lets each pill
+     drop below the base 110px floor so both fit the narrow verdict panel. */
+  .verdict-buttons {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 8px;
+  }
+
+  .verdict-btn {
+    min-height: 48px;
+    font-size: clamp(0.95rem, 3.2vw, 1.15rem);
   }
 
   .finale-character {
@@ -1557,7 +1592,9 @@
    (overrides the earlier blue-theme sidebar rules)
    ============================================================ */
 .left-panel {
-  flex: 0 0 clamp(290px, 24vw, 380px);
+  /* Narrower + lower floor (was 24vw/290px) so the sidebar keeps shrinking as the
+     screen narrows and hands more space to the main game board. */
+  flex: 0 0 clamp(190px, 20vw, 350px);
   gap: 10px;
   padding: 12px 12px 10px;
   overflow: hidden;
@@ -1565,6 +1602,14 @@
      a framed card inside it (matches the "Spot the Danger" reference). */
   background: #8A76E8;
   border-radius: 12px;
+}
+
+/* This is a landscape-locked game (portrait is blocked), so the sidebar and the
+   game board must stay SIDE BY SIDE at every width. Override the shell's
+   max-width:1100px rule that stacks .content into a column (which crams the game
+   into a sliver at the bottom); instead each element shrinks within the row. */
+.content {
+  flex-direction: row;
 }
 
 .sidebar-blue-shell {
@@ -1700,6 +1745,42 @@
   padding-top: clamp(98px, 14vh, 128px);
 }
 
+/* Real-or-Fake screens: flow the mission banner as a real grid row instead of an
+   absolute overlay that needs a guessed top padding. This way the "Screen X/Y"
+   progress pill and the phone/verdict hero always sit BELOW the banner (no
+   overlap), and when the banner's subtitle wraps to more lines as the width
+   shrinks, the 1fr hero row simply yields space — nothing is clipped. */
+.judge-panel {
+  grid-template-rows: auto auto minmax(0, 1fr);
+  /* Pack banner + progress + hero toward the top and keep the gaps tight, so the
+     upper area isn't left half-empty and the phone/verdict hero gets the most
+     height (no bottom clipping). */
+  align-content: start;
+  row-gap: clamp(6px, 1.2vh, 12px);
+  padding-top: clamp(8px, 1.4vh, 16px);
+  padding-bottom: clamp(8px, 1.4vh, 16px);
+}
+
+.judge-panel .mobile-mission-banner {
+  position: static;
+  transform: none;
+  margin-inline: auto;
+  /* Wider (the top-right icons are small now) so the subtitle wraps to fewer
+     lines, and tighter vertical padding — keeps the banner short so it doesn't
+     eat the height the phone/verdict need. */
+  width: min(600px, 66%);
+  padding-block: clamp(6px, 0.9vh, 9px);
+}
+
+.judge-panel .mission-bubble {
+  font-size: clamp(1.5rem, 2.6vw, 2.3rem);
+}
+
+.judge-panel .mobile-mission-banner small {
+  font-size: clamp(0.8rem, 1vw, 0.95rem);
+  line-height: 1.2;
+}
+
 .start-hero {
   justify-content: safe center;
 }
@@ -1750,7 +1831,10 @@
    Action button — exact replication of Activity 3's pill
    ============================================================ */
 .check-btn-wrap {
-  width: min(240px, 22vw);
+  /* Size to the button(s) instead of a fixed vw width, so the label never gets
+     clipped by overflow:hidden as the screen narrows. */
+  width: fit-content;
+  max-width: 92%;
   min-height: 0;
 }
 
@@ -1758,11 +1842,13 @@
 .check-btn-wrap .btn.secondary {
   position: relative;
   overflow: hidden;
-  width: 100%;
-  min-width: 0;
+  /* Grow to fit the (single-line) label; keep a comfortable minimum pill width. */
+  width: fit-content;
+  min-width: clamp(150px, 20vw, 240px);
   min-height: 0;
   height: 50px;
   padding: 8px 18px;
+  white-space: nowrap;
   border: 1px solid #6C5CB5;
   border-radius: 22px;
   background: #8A76E8;
@@ -1834,7 +1920,9 @@
   width: min(100%, 335px);
   height: auto;
   min-height: 0;
-  max-height: none;
+  /* Let the phone shrink (width follows via aspect-ratio) when the layout is
+     height-capped on short viewports, so it never overflows/clips the hero. */
+  max-height: 100%;
   aspect-ratio: 414 / 531;
   justify-self: center;
   align-self: center;
@@ -1893,10 +1981,14 @@
 
 .phone-screen .phone-content {
   flex: 1 1 auto;
+  min-height: 0;
   display: flex;
   flex-direction: column;
   align-items: stretch;
   justify-content: flex-start;
+  /* Safety net: if a message is still taller than the phone on very small
+     screens, it scrolls inside the screen rather than being clipped. */
+  overflow-y: auto;
 }
 
 /* Per-message brand colours: header bar tint + matching avatar initials.
@@ -2109,7 +2201,7 @@ body:has(.final-mission-stage) .interaction-host-area {
   min-height: 0;
   overflow: hidden;
   border-radius: 28px;
-  background: url('./Assets/winter_Backk.webp') center / cover no-repeat;
+  background: url('./Assets/background3.webp') center / cover no-repeat;
 }
 
 /* Distinct light-blue rounded box sitting BEHIND the white "what you learned"
@@ -2137,18 +2229,13 @@ body:has(.final-mission-stage) .interaction-host-area {
   top: clamp(12px, 2.8vh, 26px);
   left: 50%;
   z-index: 5;
-  width: min(820px, 72%);
-  transform: translateX(-50%);
+  /* Narrower + a left shift that grows on narrow screens (and fades to 0 by
+     ~1300px) so the big title clears the top-right icons instead of running under
+     them. Tej is kept below the heading via the smaller .final-zara size, so no
+     rightward shift (which used to push the title into the icons) is needed. */
+  width: min(680px, 66%);
+  transform: translateX(calc(-50% - clamp(0px, calc(210px - 16vw), 70px)));
   text-align: center;
-}
-
-/* On shorter windowed viewports Tej's head rises into the heading area, so nudge
-   the heading + subtitle right of centre to clear his head. Only kicks in when
-   short enough to overlap; fullscreen overrides back to centre (it has the room). */
-@media (max-height: 780px) {
-  .final-heading {
-    left: 58%;
-  }
 }
 
 .final-heading h3 {
@@ -2220,11 +2307,11 @@ body:has(.final-mission-stage) .interaction-host-area {
   right: 0;
   top: auto;
   /* Bottom-anchored to the SAME edge as the "what you learned" panel so Tej and
-     the panel scale together as the viewport grows. The offset ≈ the panel's own
-     bottom inset + its height (~163px), so (windowed) Tej's bottom rests ON the
-     white box's top edge. Fullscreen restores +172px below and lifts the box
-     instead — see body.is-app-fullscreen overrides. */
-  bottom: calc(clamp(76px, 10vh, 104px) + 133px);
+     the panel scale together as the viewport grows. The offset is kept a little
+     smaller than the panel's height so Tej's lower body always tucks INTO the
+     white box's top edge (rests on the box) rather than floating above it on
+     narrower screens. Fullscreen lifts the box instead — see the overrides. */
+  bottom: calc(clamp(76px, 10vh, 104px) + 100px);
   height: clamp(260px, 42vh, 420px);
 }
 
@@ -2240,7 +2327,10 @@ body:has(.final-mission-stage) .interaction-host-area {
   /* Match Activity 4's character position/size exactly. */
   left: 4%;
   bottom: 0;
-  width: clamp(190px, 22vw, 340px);
+  /* Slightly smaller (was 22vw / 340px). Tej is bottom-anchored, so a smaller
+     figure lowers only his head — keeping it below the heading/subtitle on short
+     viewports without touching the learned panel below. */
+  width: clamp(170px, 18vw, 290px);
   /* Show Tej only down to the wrists/hands: crop the lower body by giving the
      box a shorter aspect than the image (560x860) and covering from the top.
      The hard bottom edge tucks behind the white panel (z-index 8). */
@@ -2414,28 +2504,33 @@ body.is-app-fullscreen .final-heading {
    within the floors (small labels >= 12px, everything else >= 14px).
    ============================================================================ */
 @media (max-width: 1100px) {
+  /* On narrower windows the phone column shrinks relative to the verdict panel,
+     leaving the message cramped. Give the phone more room here only — full-screen
+     (>1100px) proportions are unchanged. */
+  .judge-layout {
+    grid-template-columns: minmax(120px, clamp(240px, 34vw, 380px)) minmax(220px, 1fr);
+  }
+
+  .phone-mockup {
+    width: min(100%, 380px);
+  }
+
   .final-mission-stage {
     grid-template-columns: clamp(200px, 24vw, 300px) 1fr;
     padding: 14px;
   }
 
   .final-hero-row {
-    bottom: calc(clamp(72px, 9vh, 98px) + 158px);
+    /* Smaller offset so Tej tucks onto the "what you learned" box instead of
+       floating above it as the width shrinks (matches the base rule). */
+    bottom: calc(clamp(72px, 9vh, 98px) + 112px);
     height: clamp(240px, 40vh, 380px);
   }
 }
 
 @media (max-width: 760px) {
-  .icon-circle {
-    width: 46px;
-    height: 46px;
-  }
-
-  .icon-circle svg {
-    width: 26px;
-    height: 26px;
-  }
-
+  /* Icon sizing is handled by the width-responsive clamp() in index.css — no
+     fixed override here (it used to force an oversized 46px on narrow screens). */
   .phone-mockup {
     height: 380px;
   }
