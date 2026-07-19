@@ -2336,7 +2336,7 @@ body:has(.final-mission-stage) .interaction-host-area {
      smaller than the panel's height so Tej's lower body always tucks INTO the
      white box's top edge (rests on the box) rather than floating above it on
      narrower screens. Fullscreen lifts the box instead — see the overrides. */
-  bottom: calc(clamp(76px, 10vh, 104px) + 100px);
+  bottom: calc(clamp(76px, 10vh, 104px) + 120px);
   height: clamp(260px, 42vh, 420px);
 }
 
@@ -2372,7 +2372,9 @@ body:has(.final-mission-stage) .interaction-host-area {
   position: absolute;
   z-index: 4;
   left: 50%;
-  top: 44%;
+  /* Windowed: nudged down from 44% so the shield clears the heading line above it.
+     Fullscreen keeps its own 50% via the is-app-fullscreen override below. */
+  top: 52%;
   width: clamp(104px, 11vw, 176px);
   height: auto;
   object-fit: contain;
@@ -2548,7 +2550,7 @@ body.is-app-fullscreen .final-heading {
   .final-hero-row {
     /* Smaller offset so Tej tucks onto the "what you learned" box instead of
        floating above it as the width shrinks (matches the base rule). */
-    bottom: calc(clamp(72px, 9vh, 98px) + 112px);
+    bottom: calc(clamp(72px, 9vh, 98px) + 132px);
     height: clamp(240px, 40vh, 380px);
   }
 }
