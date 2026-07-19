@@ -1694,6 +1694,31 @@
   z-index: 3;
 }
 
+/* Fullscreen only: the .detective-guide container grows to its 40vh/360px max, so
+   Tej (sized at 132% of that height) scales up and his raised hand reaches into
+   the white speech bubble on the right. Shrink him a touch and nudge him further
+   left in fullscreen so there's the same clearance from the bubble as in windowed
+   mode. Windowed mode is unaffected. */
+body.is-app-fullscreen .sidebar-blue-shell .detective-guide-image {
+  height: 120%;
+  left: -20px;
+}
+
+/* Wrong-answer pose only (tej_16 leans right, toward the bubble): shift the speech
+   bubble rightward so it clears Tej's head/finger. The bubble is right-anchored at
+   the panel edge (right:2px) inside overflow:hidden containers, so it can't be
+   translated further right without clipping — instead the right edge stays pinned
+   and the left edge + tail move right (narrower width), which opens the gap from
+   Tej. Applies in both windowed and fullscreen; fullscreen trims a touch more
+   since Tej is larger there. */
+.sidebar-blue-shell .detective-guide.guide-wrong .detective-speech {
+  width: 40%;
+}
+
+body.is-app-fullscreen .sidebar-blue-shell .detective-guide.guide-wrong .detective-speech {
+  width: 37%;
+}
+
 .sidebar-blue-shell #coachCard {
   position: relative;
   z-index: 2;

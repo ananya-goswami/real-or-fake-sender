@@ -256,6 +256,10 @@ const TEJ = {
 function setGuide(pose) {
   if (ui.tejImage) ui.tejImage.src = `./Assets/${pose.img}`;
   if (ui.tejSpeech) ui.tejSpeech.innerHTML = pose.speech;
+  // The wrong-answer pose (tej_16) leans toward the speech bubble; tag the guide
+  // so CSS can nudge the bubble clear of Tej just for that pose.
+  const guide = ui.tejImage?.closest('.detective-guide');
+  if (guide) guide.classList.toggle('guide-wrong', pose === TEJ.wrong);
 }
 
 // First-screen voice prompt (behavior ported from the bubble-burst game): the
