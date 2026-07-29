@@ -1708,7 +1708,7 @@
      bubble, and because he is bottom-anchored a shorter figure sits FURTHER from
      the bubble, so this also guarantees no collision. */
   top: auto;
-  bottom: -22px;
+  bottom: -15px;
   max-height: none;
   left: 0;
   z-index: 0;
@@ -1727,8 +1727,8 @@
 /* Narrow windows only: the speech bubble's text wraps to more lines there, so it
    grows tall enough to reach Tej. Shrink him a little so he still never touches it. */
 @media (max-width: 1400px) {
-  .sidebar-blue-shell .detective-guide-image { height: 100%; bottom: -78px; }
-  .sidebar-blue-shell .detective-guide.guide-wrong .detective-guide-image { height: 96%; bottom: -78px; }
+  .sidebar-blue-shell .detective-guide-image { height: 100%; bottom: -56px; }
+  .sidebar-blue-shell .detective-guide.guide-wrong .detective-guide-image { height: 96%; bottom: -56px; }
 }
 
 body.is-app-fullscreen .sidebar-blue-shell .detective-guide-image {
