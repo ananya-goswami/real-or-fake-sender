@@ -1674,16 +1674,25 @@
   position: relative;
 }
 
-/* Size by HEIGHT so the person is the same scale in every pose (all the pose
-   crops share the same height) = consistent size across all screens. Tej's head
-   stays left of the bubble and his hands stay below it, so no overlap. */
+/* The real fix for BUG_ROF_03. Size by WIDTH only (was `height: 132%` +
+   `width: auto` + `max-width: none` + `left: -14px`):
+   - every pose is the same 560x860 canvas with the artwork touching x=0 and NO
+     transparent padding, so the old rules rendered the image wider than this
+     overflow:hidden container and sliced ~29px of original artwork off the left —
+     exactly where Tej's hanging forearm and hand are;
+   - `left: 0` keeps the artwork flush with the panel edge instead of pushing it
+     out of view, and 90% (not 100%) leaves a margin on the right so he stays
+     clear of the white speech bubble. Measured to overlap the bubble LESS than
+     the original layout on every pose while showing the whole arm.
+   Only ONE dimension is constrained here on purpose: setting an explicit height
+   as well made the browser clamp the width and squash him horizontally. */
 .sidebar-blue-shell .detective-guide-image {
-  width: auto;
-  height: 132%;
-  max-width: none;
+  width: 90%;
+  height: auto;
+  max-width: 90%;
   top: 0;
   bottom: auto;
-  left: -14px;
+  left: 0;
   z-index: 0;
 }
 
@@ -1694,14 +1703,16 @@
   z-index: 3;
 }
 
-/* Fullscreen only: the .detective-guide container grows to its 40vh/360px max, so
-   Tej (sized at 132% of that height) scales up and his raised hand reaches into
-   the white speech bubble on the right. Shrink him a touch and nudge him further
-   left in fullscreen so there's the same clearance from the bubble as in windowed
-   mode. Windowed mode is unaffected. */
+/* Fullscreen only. Tej is no longer sized from the container's height, so he does
+   not grow when .detective-guide expands to its 40vh/360px max — the width rule
+   above governs both modes and needs no fullscreen-specific shrink. */
 body.is-app-fullscreen .sidebar-blue-shell .detective-guide-image {
-  height: 120%;
-  left: -20px;
+  /* Was `height: 120%; left: -20px`, which cropped even MORE of his left arm in
+     fullscreen than in windowed mode (BUG_ROF_03). Size is width-driven now, so
+     the height override would only distort him; the 90% width above already keeps
+     the same clearance from the bubble in both modes. */
+  height: auto;
+  left: 0;
 }
 
 /* Wrong-answer pose only (tej_16 leans right, toward the bubble): shift the speech
