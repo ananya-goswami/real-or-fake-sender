@@ -1726,6 +1726,14 @@ body.is-app-fullscreen .sidebar-blue-shell .detective-guide-image {
   width: 40%;
 }
 
+/* Wrong pose (tej_16) raises an index finger toward the bubble, so at the shared
+   90% width his hand ran into it. Narrow ONLY this pose so the finger stays clear;
+   left:0 is untouched, so his arm is still fully visible (BUG_ROF_03). */
+.sidebar-blue-shell .detective-guide.guide-wrong .detective-guide-image {
+  width: 78%;
+  max-width: 78%;
+}
+
 body.is-app-fullscreen .sidebar-blue-shell .detective-guide.guide-wrong .detective-speech {
   width: 37%;
 }
