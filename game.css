@@ -1687,9 +1687,17 @@
    Only ONE dimension is constrained here on purpose: setting an explicit height
    as well made the browser clamp the width and squash him horizontally. */
 .sidebar-blue-shell .detective-guide-image {
-  width: 75%;
-  height: auto;
-  max-width: 75%;
+  /* object-fit:contain is what guarantees the asset is shown faithfully: the box
+     is the panel, and the artwork is scaled to fit INSIDE it, so it can never be
+     cropped (left arm, or his head) and can never be distorted, whatever shape
+     the panel takes. object-position pins it to the bottom so he always rests on
+     the white Safety Coach card and never floats. Height <100% keeps his head and
+     hands below the speech bubble. */
+  width: 100%;
+  height: 72%;
+  object-fit: contain;
+  object-position: bottom center;
+  max-width: none;
   /* Pushed DOWN so the figure is cropped at about wrist height by the container's
      overflow:hidden — that keeps his hands clear of the white speech bubble and
      leaves no empty gap under him (he meets the Safety Coach card). Top-anchored
@@ -1721,7 +1729,6 @@ body.is-app-fullscreen .sidebar-blue-shell .detective-guide-image {
      fullscreen than in windowed mode (BUG_ROF_03). Size is width-driven now, so
      the height override would only distort him; the 90% width above already keeps
      the same clearance from the bubble in both modes. */
-  height: auto;
   left: 0;
 }
 
@@ -1740,8 +1747,7 @@ body.is-app-fullscreen .sidebar-blue-shell .detective-guide-image {
    90% width his hand ran into it. Narrow ONLY this pose so the finger stays clear;
    left:0 is untouched, so his arm is still fully visible (BUG_ROF_03). */
 .sidebar-blue-shell .detective-guide.guide-wrong .detective-guide-image {
-  width: 70%;
-  max-width: 70%;
+  height: 66%;
 }
 
 body.is-app-fullscreen .sidebar-blue-shell .detective-guide.guide-wrong .detective-speech {
