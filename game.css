@@ -1687,16 +1687,20 @@
    Only ONE dimension is constrained here on purpose: setting an explicit height
    as well made the browser clamp the width and squash him horizontally. */
 .sidebar-blue-shell .detective-guide-image {
-  width: 90%;
+  width: 75%;
   height: auto;
-  max-width: 90%;
+  max-width: 75%;
   /* Pushed DOWN so the figure is cropped at about wrist height by the container's
      overflow:hidden — that keeps his hands clear of the white speech bubble and
      leaves no empty gap under him (he meets the Safety Coach card). Top-anchored
      with a positive offset, so the crop always lands at the bottom, never on his
      head. */
-  top: 14%;
-  bottom: auto;
+  /* bottom:0 => he always rests on the Safety Coach card, so he can never float
+     no matter how short a pose renders. max-height caps him below the speech
+     bubble, and because he is bottom-anchored a shorter figure sits FURTHER from
+     the bubble, so this also guarantees no collision. */
+  top: auto;
+  bottom: 0;
   max-height: none;
   left: 0;
   z-index: 0;
@@ -1736,8 +1740,8 @@ body.is-app-fullscreen .sidebar-blue-shell .detective-guide-image {
    90% width his hand ran into it. Narrow ONLY this pose so the finger stays clear;
    left:0 is untouched, so his arm is still fully visible (BUG_ROF_03). */
 .sidebar-blue-shell .detective-guide.guide-wrong .detective-guide-image {
-  width: 78%;
-  max-width: 78%;
+  width: 70%;
+  max-width: 70%;
 }
 
 body.is-app-fullscreen .sidebar-blue-shell .detective-guide.guide-wrong .detective-speech {
