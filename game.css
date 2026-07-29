@@ -1690,8 +1690,14 @@
   width: 90%;
   height: auto;
   max-width: 90%;
-  top: 0;
+  /* Pushed DOWN so the figure is cropped at about wrist height by the container's
+     overflow:hidden — that keeps his hands clear of the white speech bubble and
+     leaves no empty gap under him (he meets the Safety Coach card). Top-anchored
+     with a positive offset, so the crop always lands at the bottom, never on his
+     head. */
+  top: 14%;
   bottom: auto;
+  max-height: none;
   left: 0;
   z-index: 0;
 }
